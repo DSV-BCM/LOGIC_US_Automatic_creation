@@ -1,15 +1,13 @@
 import json
 import logging
-from ldap3.utils.ciDict import CaseInsensitiveDict
 
 def process_entries(entries):
     all_users = []
     for entry in entries:
-        # Verificar si el entry es un CaseInsensitiveDict
-        if isinstance(entry, CaseInsensitiveDict):
-            entry_json = dict(entry)  # Convertirlo a un diccionario normal
-        elif isinstance(entry, dict):
-            entry_json = entry  # Ya es un diccionario normal
+        # Si 'entry' es un diccionario, podemos acceder directamente a sus valores
+        if isinstance(entry, dict):
+            entry_json = entry  # Ya es un diccionario, no necesitamos convertirlo a JSON
+            
         else:
             logging.error(f"Tipo de entrada desconocido: {type(entry)}")
             continue

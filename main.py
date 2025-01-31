@@ -17,7 +17,7 @@ def main():
  
     user_manager = UserManager(ldap_connector, COUNTRY_CONFIG)
 
-    country_code = input("Ingrese el código de país (por ejemplo, US, AR): ").strip().upper()
+    country_code = 'US' # Country code fijo para US
     user_type = input("Ingrese el tipo de usuario (internals, externals, group): ").strip().lower()
  
     if country_code not in COUNTRY_CONFIG:
