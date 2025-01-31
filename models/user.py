@@ -1,0 +1,35 @@
+class User:
+    def __init__(self, data):
+        self.mail = data.get("mail")
+        self.user_principal_name = data.get("userPrincipalName")
+        self.distinguished_name = data.get("distinguishedName")
+        self.employee_type = data.get("employeeType")
+        self.title = data.get("title")
+        self.given_name = data.get("givenName")
+        self.surname = data.get("sn")
+        self.extension_attribute4 = data.get("extensionAttribute4")
+        self.department = data.get("department")
+        self.department_number = data.get("departmentNumber")
+        self.office_name = data.get("physicaldeliveryofficename")
+        self.manager = data.get("manager")
+        self.country_code = data.get("c")
+        self.country_name = data.get("co")
+        self.employee_id = data.get("employeeID")
+        self.telephone_number = data.get("telephonenumber")
+        self.mobile_number = data.get("mobile")
+        self.street_address = data.get("streetaddress")
+        self.city = data.get("l")
+        self.state = data.get("st")
+        self.postal_code = data.get("postalcode")
+        self.company = data.get("company")
+        self.division = data.get("division")
+        self.mail_nickname = data.get("mailNickname")
+        self.sam_account_name = data.get("sAMAccountName")
+        self.user_account_control = data.get("userAccountControl")
+        self.account_expires = data.get("accountExpires")
+        self.display_name = data.get("displayName")
+        self.extension_attribute6 = data.get("extensionAttribute6")
+        
+
+    def __repr__(self):
+        return f"<User {self.display_name} ({self.mail})>"
