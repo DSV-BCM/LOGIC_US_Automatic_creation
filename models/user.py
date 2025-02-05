@@ -29,7 +29,42 @@ class User:
         self.account_expires = data.get("accountExpires")
         self.display_name = data.get("displayName")
         self.extension_attribute6 = data.get("extensionAttribute6")
-        
 
     def __repr__(self):
         return f"<User {self.display_name} ({self.mail})>"
+
+    def to_dict(self):
+        """
+        Devuelve un diccionario con los atributos del usuario de forma que sea serializable a JSON.
+        """
+        return {
+            "mail": self.mail,
+            "userPrincipalName": self.user_principal_name,
+            "distinguishedName": self.distinguished_name,
+            "employeeType": self.employee_type,
+            "title": self.title,
+            "givenName": self.given_name,
+            "sn": self.surname,
+            "extensionAttribute4": self.extension_attribute4,
+            "department": self.department,
+            "departmentNumber": self.department_number,
+            "physicaldeliveryofficename": self.office_name,
+            "manager": str(self.manager) if self.manager else None,  # Asegúrate de convertir a str
+            "c": self.country_code,
+            "co": self.country_name,
+            "employeeID": self.employee_id,
+            "telephonenumber": self.telephone_number,
+            "mobile": self.mobile_number,
+            "streetaddress": self.street_address,
+            "l": self.city,
+            "st": self.state,
+            "postalcode": self.postal_code,
+            "company": self.company,
+            "division": self.division,
+            "mailNickname": self.mail_nickname,
+            "sAMAccountName": self.sam_account_name,
+            "userAccountControl": self.user_account_control,
+            "accountExpires": str(self.account_expires) if self.account_expires else None,  # Convertir a str
+            "displayName": self.display_name,
+            "extensionAttribute6": self.extension_attribute6
+        }

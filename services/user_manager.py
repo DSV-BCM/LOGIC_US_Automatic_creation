@@ -1,4 +1,4 @@
-from models.user import User
+
 from ldap3.core.exceptions import LDAPException
 from utils import process_entries 
 import logging
@@ -71,10 +71,10 @@ class UserManager:
             logging.info(f"Entradas antes de procesar: {len(entries)}")
             
             all_users.extend(process_entries(entries))
+
             logging.info(f"Usuarios después de procesar: {len(all_users)}")
 
         except LDAPException as e:
             print(f"Error en la búsqueda LDAP: {e}")
         
-        print(f"Se encontraron {len(all_users)} usuarios en total.")
         return all_users
