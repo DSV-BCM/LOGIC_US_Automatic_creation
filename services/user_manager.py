@@ -1,6 +1,7 @@
 from models.user import User
 from ldap3.core.exceptions import LDAPException
 from utils import process_entries 
+import logging
 
 class UserManager:
     def __init__(self, ldap_connector, country_config):
@@ -67,8 +68,10 @@ class UserManager:
                 paged_size=1000
             )
 
-            # Procesamos los resultados de las entradas
-            all_users.extend(process_entries(entries))  # Usamos la función común para procesar las entradas
+            logging.info(f"Entradas antes de procesar: {len(entries)}")
+            
+            all_users.extend(process_entries(entries))
+            logging.info(f"Usuarios después de procesar: {len(all_users)}")
 
         except LDAPException as e:
             print(f"Error en la búsqueda LDAP: {e}")

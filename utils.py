@@ -1,30 +1,14 @@
-import json
+from ldap3 import Entry
 import logging
 
+
 def process_entries(entries):
-    all_users = []
-    for entry in entries:
-        # Si 'entry' es un diccionario, podemos acceder directamente a sus valores
-        if isinstance(entry, dict):
-            entry_json = entry  # Ya es un diccionario, no necesitamos convertirlo a JSON
-            
-        else:
-            logging.error(f"Tipo de entrada desconocido: {type(entry)}")
-            continue
+    """
+    Procesa las entradas LDAP y extrae los atributos clave-valor desde el formato de objeto Entry.
 
-        # Si el JSON está como string, lo intentamos convertir
-        if isinstance(entry_json, str):
-            try:
-                entry_json = json.loads(entry_json)
-            except json.JSONDecodeError as e:
-                logging.error(f"Error decodificando JSON: {e}")
-                continue  
+    :param entries: Lista de entradas obtenidas desde el servidor LDAP (en formato de objeto Entry).
+    :return: Lista de diccionarios con la información procesada de cada entrada.
+    """
 
-        attributes = entry_json.get("attributes", {})
-        cleaned_data = {
-            key: value[0] if isinstance(value, list) and value else (value if value else None)
-            for key, value in attributes.items()
-        }
 
-        all_users.append(cleaned_data)  # Añadir usuarios a la lista general
-    return all_users
+    logging.info(f"Primeras 3 entradas antes de procesar: {entries[:3]}")
