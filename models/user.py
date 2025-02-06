@@ -36,35 +36,53 @@ class User:
     def to_dict(self):
         """
         Devuelve un diccionario con los atributos del usuario de forma que sea serializable a JSON.
+        Si un atributo está vacío o es None, se asigna 'DOESNT_HAVE'.
         """
+        def sanitize(value):
+            # Si es un objeto ldap3.Attribute, obtenemos el valor real
+            if hasattr(value, "value"):
+                value = value.value
+
+            # Si el valor sigue siendo None o vacío, se considera "DOESNT_HAVE"
+            if value is None or value == "" or (isinstance(value, list) and not value):
+                return "DOESNT_HAVE"
+            
+            # Si no es una cadena, devolver el valor tal cual
+            if not isinstance(value, str):
+                return value
+            
+            # Si es una cadena no vacía, devolverla tal cual
+            return value
+
         return {
-            "mail": self.mail,
-            "userPrincipalName": self.user_principal_name,
-            "distinguishedName": self.distinguished_name,
-            "employeeType": self.employee_type,
-            "title": self.title,
-            "givenName": self.given_name,
-            "sn": self.surname,
-            "extensionAttribute4": self.extension_attribute4,
-            "department": self.department,
-            "departmentNumber": self.department_number,
-            "physicaldeliveryofficename": self.office_name,
-            "manager": str(self.manager) if self.manager else None,  # Asegúrate de convertir a str
-            "c": self.country_code,
-            "co": self.country_name,
-            "employeeID": self.employee_id,
-            "telephonenumber": self.telephone_number,
-            "mobile": self.mobile_number,
-            "streetaddress": self.street_address,
-            "l": self.city,
-            "st": self.state,
-            "postalcode": self.postal_code,
-            "company": self.company,
-            "division": self.division,
-            "mailNickname": self.mail_nickname,
-            "sAMAccountName": self.sam_account_name,
-            "userAccountControl": self.user_account_control,
-            "accountExpires": str(self.account_expires) if self.account_expires else None,  # Convertir a str
-            "displayName": self.display_name,
-            "extensionAttribute6": self.extension_attribute6
+            "mail": sanitize(self.mail),
+            "userPrincipalName": sanitize(self.user_principal_name),
+            "distinguishedName": sanitize(self.distinguished_name),
+            "employeeType": sanitize(self.employee_type),
+            "title": sanitize(self.title),
+            "givenName": sanitize(self.given_name),
+            "sn": sanitize(self.surname),
+            "extensionAttribute4": sanitize(self.extension_attribute4),
+            "department": sanitize(self.department),
+            "departmentNumber": sanitize(self.department_number),
+            "physicaldeliveryofficename": sanitize(self.office_name),
+            "manager": sanitize(self.manager),
+            "c": sanitize(self.country_code),
+            "co": sanitize(self.country_name),
+            "employeeID": sanitize(self.employee_id),
+            "telephonenumber": sanitize(self.telephone_number),
+            "mobile": sanitize(self.mobile_number),
+            "streetaddress": sanitize(self.street_address),
+            "l": sanitize(self.city),
+            "st": sanitize(self.state),
+            "postalcode": sanitize(self.postal_code),
+            "company": sanitize(self.company),
+            "division": sanitize(self.division),
+            "mailNickname": sanitize(self.mail_nickname),
+            "sAMAccountName": sanitize(self.sam_account_name),
+            "userAccountControl": sanitize(self.user_account_control),
+            "accountExpires": sanitize(self.account_expires),
+            "displayName": sanitize(self.display_name),
+            "extensionAttribute6": sanitize(self.extension_attribute6)
         }
+

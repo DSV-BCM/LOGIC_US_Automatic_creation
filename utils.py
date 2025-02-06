@@ -1,5 +1,39 @@
-import logging
 from models.user import User
+import re
+from datetime import datetime
+
+
+def clean_parameter(parameter):
+    """
+    Función que utilizamos para limpiar con la librería re un string y así obtener el dato que necesitamos.
+    """
+    if hasattr(parameter, "value"):  
+        parameter = parameter.value
+
+    if not isinstance(parameter, str):  
+        return parameter
+
+    match = re.search(r'CN=([^,]+)', parameter)
+    return match.group(1) if match else parameter
+
+
+
+def format_date(date):
+    """
+    Función para formatear la fecha según los requisitos:
+    - Si es '9999-12-31', devuelve "Never".
+    - En otros casos, extrae solo la parte de la fecha (YYYY-MM-DD).
+    """
+
+    if hasattr(date, "value"):
+        date = date.value
+
+    # Confirmamos que es un objeto datetime
+    if isinstance(date, datetime):
+        return "Never" if date.date() in [datetime(9999, 12, 31).date(), datetime(1601, 1, 1).date()] else date.strftime("%Y-%m-%d")
+
+    return date 
+
 
 def process_entries(entries):
     """
@@ -9,18 +43,15 @@ def process_entries(entries):
     :param entries: Lista de entradas obtenidas desde el servidor LDAP (en formato de objeto Entry).
     :return: Lista de objetos User creados a partir de las entradas.
     """
-    #logging.info(f"Primeras 3 entradas antes de procesar: {entries[:3]}") 
 
-    users = []  # Lista para almacenar las instancias de User
+    users = []
 
-    # Recorrer cada entrada
     for entry in entries:
 
-        # Si 'entry' es un objeto con atributos (no un diccionario), lo accedes así:
         data = {
             "mail": entry.mail,
             "userPrincipalName": entry.userPrincipalName,
-            "distinguishedName": entry.distinguishedName,
+            "distinguishedName": clean_parameter(entry.distinguishedName),
             "employeeType": entry.employeeType,
             "title": entry.title,
             "givenName": entry.givenName,
@@ -29,7 +60,7 @@ def process_entries(entries):
             "department": entry.department,
             "departmentNumber": entry.departmentNumber,
             "physicaldeliveryofficename": entry.physicaldeliveryofficename,
-            "manager": entry.manager,
+            "manager": clean_parameter(entry.manager),
             "c": entry.c,
             "co": entry.co,
             "employeeID": entry.employeeID,
@@ -44,15 +75,13 @@ def process_entries(entries):
             "mailNickname": entry.mailNickname,
             "sAMAccountName": entry.sAMAccountName,
             "userAccountControl": entry.userAccountControl,
-            "accountExpires": entry.accountExpires,
+            "accountExpires": format_date(entry.accountExpires),
             "displayName": entry.displayName,
             "extensionAttribute6": entry.extensionAttribute6
         }
 
-        # Crear un objeto User con los datos
         user = User(data)
-        
-        # Añadir el usuario a la lista
+
         users.append(user)
 
     return users

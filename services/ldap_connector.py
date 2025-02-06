@@ -36,7 +36,6 @@ class LDAPConnector:
         paged_size = 1000
 
         while True:
-            # Realizamos la búsqueda
             success = self.conn.search(
                 search_base=base_dn,
                 search_filter=search_filter,
@@ -45,24 +44,22 @@ class LDAPConnector:
                 paged_cookie=cookie  # Usamos el cookie para paginación
             )
 
-            # Imprimimos el resultado para depuración
             logging.debug(f"Resultado de la búsqueda: {self.conn.result}")
 
             if success:
                 total_pages += 1
                 logging.info(f"Página {total_pages} procesada")
 
-                # Agregar las entradas de esta página a all_results
                 all_results.extend(self.conn.entries)
 
                 # Verificamos si hay más páginas
                 cookie = self.conn.result['controls'].get('1.2.840.113556.1.4.319', {}).get('value', {}).get('cookie', b'')
                 if not cookie:
                     logging.info("No hay más páginas de resultados.")
-                    break  # Si no hay cookie, hemos procesado todas las páginas
+                    break 
             else:
                 logging.error("La búsqueda no fue exitosa.")
-                break  # Si la búsqueda no es exitosa, detenemos el ciclo
+                break 
 
         logging.info(f"Total de páginas procesadas: {total_pages}")
         logging.info(f"Total de resultados encontrados: {len(all_results)}")

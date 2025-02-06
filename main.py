@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from services.ldap_connector import LDAPConnector
@@ -21,6 +20,7 @@ def main():
 
     # Los tres tipos de usuarios para los cuales queremos ejecutar el proceso
     user_types = ["internals", "externals", "group"]
+    #user_types = ["externals", "group"] # TEST RÁPIDO
  
     if country_code not in COUNTRY_CONFIG:
         logging.error(f"Código de país '{country_code}' no reconocido.")

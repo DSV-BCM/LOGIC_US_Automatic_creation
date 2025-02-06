@@ -8,8 +8,9 @@ LDAP_SETTINGS = {
 # Datos de conexión a nuestra BDD
 
 DATABASE_SETTINGS = {
-    "server": "sqlserver.example.com",
-    "database": "exampleDB",
-    "username": "BCM",
-    "password": "password123",
+    "server": "I26846",
+    "global_database": "dsv_global_us",
+    "one_access_database": "dsv_one_access",
+    "username": "BCM.MX",
+    "password": "Bcm2018.",
 }
