@@ -1,6 +1,6 @@
 
 from ldap3.core.exceptions import LDAPException
-from utils import process_entries 
+from utils import process_entries
 import logging
 
 class UserManager:
@@ -57,10 +57,9 @@ class UserManager:
             "extensionAttribute6",
         ]
         
-        all_users = []  # Para almacenar todos los usuarios
+        all_users = []
         
         try:
-            # Aquí ya no necesitamos gestionar el `cookie` manualmente
             entries = self.ldap_connector.search(
                 dn, 
                 search_filter, 

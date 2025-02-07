@@ -5,12 +5,13 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from config.settings import DATABASE_SETTINGS
 
 class DatabaseHandler:
-    def __init__(self, settings, db_type):
+    def __init__(self, db_type):
         """
         Inicializa la conexión a la base de datos. 
         db_type puede ser "global" o "one_access" para seleccionar la base de datos.
         """
         self.db_type = db_type
+        settings = DATABASE_SETTINGS
         database_name = settings["global_database"] if db_type == "global" else settings["one_access_database"]
         
         self.conn_str = (
@@ -28,12 +29,14 @@ class DatabaseHandler:
                 print(f"Error al conectar a la base de datos {self.db_type}: {e}")
                 return False
 
-    def execute_procedure_verify_exist_email(self, procedure_name, params):
+    def execute_procedure_verify_exist_email(self, params):
+        procedure_name = "[general].[VerifyExistEmail]"
+
         try:
             with pyodbc.connect(self.conn_str) as conn:
                 cursor = conn.cursor()
-                cursor.execute(f"EXEC {procedure_name} {', '.join('?' for _ in params)}", params)
-                result = cursor.fetchall()  # Si el procedimiento devuelve datos
+                cursor.execute(f"EXEC {procedure_name} ?, ?", params[0], params[1])
+                result = cursor.fetchall()
                 conn.commit()
                 return result if result else None
         except Exception as e:
@@ -41,15 +44,15 @@ class DatabaseHandler:
             return None
 
 # TEST procedure
-
+""""
 # Crear instancia de la conexión a la base de datos one_access
-db_one_access = DatabaseHandler(DATABASE_SETTINGS, db_type="one_access")
+db_one_access = DatabaseHandler(db_type="one_access")
 
 # Parámetros para el procedimiento almacenado
 params = ("US", "test@example.com")
 
 # Ejecutar el procedimiento
-result = db_one_access.execute_procedure_verify_exist_email("[general].[VerifyExistEmail]", params)
+result = db_one_access.execute_procedure_verify_exist_email(params)
 
 # Imprimir el resultado si existe
 if result:
@@ -60,7 +63,7 @@ else:
 
 
 
-"""
+
 TEST DE CONEXION!
 # Conectarse a la base de datos global
 db_global = DatabaseHandler(DATABASE_SETTINGS, db_type="global")
