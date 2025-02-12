@@ -4,6 +4,7 @@ from services.ldap_connector import LDAPConnector
 from services.user_manager import UserManager
 from config.countries import COUNTRY_CONFIG
 from config.settings import LDAP_SETTINGS
+from utils import verify_emails
  
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -19,8 +20,8 @@ def main():
     country_code = 'US'  # Country code fijo para US
 
     # Los tres tipos de usuarios para los cuales queremos ejecutar el proceso
-    user_types = ["internals", "externals", "group"]
-    #user_types = ["externals", "group"] # TEST RÁPIDO
+    user_types = ["group", "externals", "internals", ]
+    #user_types = ["group", "externals"] # TEST RÁPIDO
  
     if country_code not in COUNTRY_CONFIG:
         logging.error(f"Código de país '{country_code}' no reconocido.")
@@ -30,12 +31,14 @@ def main():
         logging.info(f"Buscando usuarios para el país: {country_code}")
  
         start_time = time.time()
+        all_users = [] 
 
         for user_type in user_types:
             logging.info(f"Extrayendo usuarios '{user_type}' desde LDAP...")
 
             users = user_manager.get_users(country_code, user_type)
- 
+            all_users.extend(users)
+            
             # Guardar resultados en archivo .txt para cada tipo
             output_file = f"ldap_results_{user_type}.txt"
             with open(output_file, "w") as txt_file:
@@ -64,6 +67,9 @@ def main():
         if connection:
             connection.unbind()
             logging.info("Conexión LDAP cerrada.")
+
+        # ✅ Llamamos a la función de verificación después de cerrar la conexión
+        verify_emails(all_users, country_code)
  
 if __name__ == "__main__":
     main()
