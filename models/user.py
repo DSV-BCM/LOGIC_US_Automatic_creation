@@ -39,19 +39,15 @@ class User:
         Si un atributo está vacío o es None, se asigna 'DOESNT_HAVE'.
         """
         def sanitize(value):
-            # Si es un objeto ldap3.Attribute, obtenemos el valor real
             if hasattr(value, "value"):
                 value = value.value
 
-            # Si el valor sigue siendo None o vacío, se considera "DOESNT_HAVE"
             if value is None or value == "" or (isinstance(value, list) and not value):
                 return "DOESNT_HAVE"
             
-            # Si no es una cadena, devolver el valor tal cual
             if not isinstance(value, str):
                 return value
             
-            # Si es una cadena no vacía, devolverla tal cual
             return value
 
         return {

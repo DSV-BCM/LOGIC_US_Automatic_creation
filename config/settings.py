@@ -1,3 +1,5 @@
+# Datos de conexión al AD
+
 LDAP_SETTINGS = {
     "server_address": "ldaps://ldaps.amer.dsv.com",
     "port": 636,

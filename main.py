@@ -17,9 +17,8 @@ def main():
  
     user_manager = UserManager(ldap_connector, COUNTRY_CONFIG)
 
-    country_code = 'US'  # Country code fijo para US
+    country_code = 'US'
 
-    # Los tres tipos de usuarios para los cuales queremos ejecutar el proceso
     user_types = ["group", "externals", "internals", ]
     #user_types = ["group", "externals"] # TEST RÁPIDO
  
@@ -39,14 +38,11 @@ def main():
             users = user_manager.get_users(country_code, user_type)
             all_users.extend(users)
             
-            # Guardar resultados en archivo .txt para cada tipo
             output_file = f"ldap_results_{user_type}.txt"
             with open(output_file, "w") as txt_file:
                 for user in users:
-                    # Obtenemos los datos del usuario usando to_dict()
                     user_data = user.to_dict()
                     
-                    # Escribimos los datos del usuario en el archivo
                     for key, value in user_data.items():
                         txt_file.write(f"{key}: {value}\n")
                     
@@ -68,7 +64,6 @@ def main():
             connection.unbind()
             logging.info("Conexión LDAP cerrada.")
 
-        # ✅ Llamamos a la función de verificación después de cerrar la conexión
         verify_emails(all_users, country_code)
  
 if __name__ == "__main__":

@@ -29,7 +29,7 @@ class LDAPConnector:
             logging.error("Conexión no establecida.")
             return []
 
-        # Ejecutar búsqueda con paginación
+        # Búsqueda con paginación
         all_results = []
         cookie = None
         total_pages = 0

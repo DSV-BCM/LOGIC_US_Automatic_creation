@@ -1,7 +1,6 @@
 from models.user import User
 import re
 from datetime import datetime
-from services.database_handler import DatabaseHandler
 
 def clean_parameter(parameter):
     """
@@ -36,7 +35,6 @@ def format_date(date):
     if hasattr(date, "value"):
         date = date.value
 
-    # Confirmamos que es un objeto datetime
     if isinstance(date, datetime):
         return "Never" if date.date() in [datetime(9999, 12, 31).date(), datetime(1601, 1, 1).date()] else date.strftime("%Y-%m-%d")
 
@@ -107,34 +105,36 @@ def verify_emails(users, country_code):
     start_time = time.time()
 
     for user in users:
-        email = get_string_value(user.mail)  # Extraemos el email del usuario
+        email = get_string_value(user.mail)
+        department = get_string_value(user.department)
+        # Validar si el departamento contiene "ITOS" o "Regional IT"
+        has_forbidden_department = re.search(r'\b(ITOS|Regional IT)\b', department, re.IGNORECASE)
+
         if not email:
             continue
 
-        
-        result = email_verifier.check_email_in_db(email, country_code)
+        # Si el email termina en "dsv.com" y NO tiene "ITOS" o "Regional IT" en department, verificamos en BDD
+        if email.endswith('dsv.com') and not has_forbidden_department:
+            result = email_verifier.check_email_in_db(email, country_code)
 
-        # Si el resultado contiene el mensaje esperado, guardamos al usuario completo
-        if result and any("The email does not exist in the database as active" in row[2] for row in result):
-            logging.info(f"✅ El usuario {email} esta pendiente de creacion.")
-            valid_users.append(user)
-        else:
-            logging.info(f"El usuario {email} no es candidato a creacion.")
+            if result and any("The email does not exist in the database as active" in row[2] for row in result):
+                logging.info(f"✅ El usuario {email} esta pendiente de creacion.")
+                valid_users.append(user)
+            else:
+                logging.info(f"El usuario {email} no es candidato a creacion.")
         
 
-    # Guardar en el archivo final solo los usuarios que pasaron el filtro
     output_file = f"valid_users.txt"
     with open(output_file, "w") as valid_file:
         for user in valid_users:
-            # Obtenemos los datos del usuario usando to_dict()
             user_data = user.to_dict()
 
             for key, value in user_data.items():
                 valid_file.write(f"{key}: {value}\n")
-            valid_file.write("\n" + "-"*50 + "\n\n")  # Separador entre usuarios
+            valid_file.write("\n" + "-"*50 + "\n\n")
 
     logging.info(f"✅ Se guardaron {len(valid_users)} usuarios del tipo en '{output_file}'.")
 
     end_time = time.time()
-    search_duration = (end_time - start_time) / 60  # Convertimos a minutos
+    search_duration = (end_time - start_time) / 60
     logging.info(f"La búsqueda de emails y guardado de la información tomó {search_duration:.2f} minutos.")
