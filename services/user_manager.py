@@ -23,8 +23,12 @@ class UserManager:
         
         dn = country_config[key]
 
-        # Filtro de búsqueda y atributos
-        search_filter = "(&(objectClass=user)(division=Air & Sea))"
+        if country_code == "US":
+            # Filtro de búsqueda y atributos 
+            search_filter = "(&(objectClass=user)(division=Air & Sea)(mail=*dsv.com)(!(department=*ITOS*))(!(department=*Regional IT*)))"
+        else:
+            search_filter = "(&(objectClass=user)(mail=*dsv.com))"
+ 
         attributes = [
             "mail",
             "userPrincipalName",

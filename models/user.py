@@ -29,6 +29,9 @@ class User:
         self.account_expires = data.get("accountExpires")
         self.display_name = data.get("displayName")
         self.extension_attribute6 = data.get("extensionAttribute6")
+        self.classification = data.get("classification")
+        self.branchCode = data.get("branchCode")
+        self.departmentCode = data.get("departmentCode")
 
     def __repr__(self):
         return f"<User {self.display_name} ({self.mail})>"
@@ -79,6 +82,9 @@ class User:
             "userAccountControl": sanitize(self.user_account_control),
             "accountExpires": sanitize(self.account_expires),
             "displayName": sanitize(self.display_name),
-            "extensionAttribute6": sanitize(self.extension_attribute6)
+            "extensionAttribute6": sanitize(self.extension_attribute6),
+            "classification": sanitize(self.classification),
+            "branchCode": sanitize(self.branchCode),
+            "departmentCode": sanitize(self.departmentCode)
         }
 
