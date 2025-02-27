@@ -166,28 +166,26 @@ def process_entries(entries):
 
 import logging
 from services.email_verifier import EmailVerifier
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 
 def fetch_manager_email(user, user_manager, cached_managers):
     """
     Función para obtener el correo del manager de un usuario de manera paralela.
     """
-    user_data = user.to_dict()
-    manager_email = None
-
-    if 'manager' in user_data:
-        manager_name = user_data['manager']
-        manager_email = user_manager.search_manager_email(manager_name, cached_managers)
+    if user.manager not in cached_managers:
+        manager_email = user_manager.search_manager_email(user.manager)
+        cached_managers[user.manager] = manager_email
+    else:
+        manager_email = cached_managers[user.manager]
     
-    # Actualizamos el campo managerEmail del objeto user
-    user.managerEmail = manager_email  # Asegurándonos de que se actualiza correctamente
-    
-    return user  # Devolvemos solo el objeto `user` actualizado con el `managerEmail`
-
+    user.managerEmail = manager_email
 
 
 def process_managers_emails(valid_users):
+    print(f"usuarios recibidos en process_managers_emails(): {valid_users}")
+
     from services.user_manager import UserManager
     from services.ldap_connector import LDAPConnector
 
@@ -199,22 +197,24 @@ def process_managers_emails(valid_users):
     
     user_manager = UserManager(ldap_connector, COUNTRY_CONFIG)
 
-    # Inicializamos la caché de managers
     cached_managers = {}
 
-    # Log para verificar el número de usuarios a procesar
     logging.info(f"Se van a procesar {len(valid_users)} usuarios para verificar el email del manager.")
 
     start_time = time.time()
+
     with ThreadPoolExecutor(max_workers=10) as executor:
-        futures = [
-            executor.submit(fetch_manager_email, user, user_manager, cached_managers) 
-            for user in valid_users
-        ]
-        
-        for future in futures:
-            user = future.result()  # Ahora solo obtenemos el objeto `user` actualizado con el `managerEmail`
-            # No es necesario hacer nada más, ya que `user` ya tiene el `managerEmail` actualizado
+        futures = {executor.submit(fetch_manager_email, user, user_manager, cached_managers): user for user in valid_users}
+
+    for future in as_completed(futures):
+        future.result()
+
+    for user in valid_users:
+        print(f"Usuario: {user.mail}, Manager Email: {user.managerEmail}")
+        print("INFORMACION COMPLETA DEL USUARIO: ")
+        print(user.to_dict())
+
+    print(f"usuarios actualizados desde process_managers_emails(): {valid_users}")
 
     end_time = time.time()
     search_duration = (end_time - start_time) / 60
@@ -222,6 +222,8 @@ def process_managers_emails(valid_users):
     
     connection.unbind()
     logging.info("Conexión LDAP para la búsqueda de emails cerrada.")
+
+    return valid_users
 
 
 
@@ -267,7 +269,9 @@ def verify_emails(users, country_code):
 
     logging.info(f"Verificación de emails completada en {search_duration:.2f} minutos.")
 
-    process_managers_emails(valid_users)  # Esto actualizará los usuarios con el managerEmail
+    print(f"usuarios desde verify_emails(): {valid_users}")
+    
+    valid_users = process_managers_emails(valid_users)  # Esto actualizará los usuarios con el managerEmail
 
     output_file = "valid_users.txt"
     with open(output_file, "w") as valid_file:
@@ -275,9 +279,6 @@ def verify_emails(users, country_code):
             user_data = user.to_dict()
             for key, value in user_data.items():
                 valid_file.write(f"{key}: {value}\n")
-            
-            # Ya no necesitamos escribir el email del manager aquí, ya que está en el user.to_dict()
-            # Y si se ha actualizado previamente, ya estará incluido.
             
             valid_file.write("\n" + "-"*50 + "\n\n")
 

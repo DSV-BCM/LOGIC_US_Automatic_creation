@@ -67,43 +67,36 @@ class LDAPConnector:
         logging.info(f"Total de resultados encontrados: {len(all_results)}")
         return all_results
 
-    def search_email_by_givenname(self, base_dn, search_filter, attributes=None, paged_size=500):
-        """Realiza una búsqueda LDAP para obtener correos electrónicos de todos los usuarios."""
+    def search_email_by_givenname(self, base_dn, search_filter, attributes="mail"):
+        """Realiza una búsqueda LDAP para obtener el correo electrónico de un usuario."""
         if not self.conn:
             logging.error("Conexión no establecida.")
-            return []
+            return None
 
-        if attributes is None:
-            attributes = ["mail"]
+        try:
+            success = self.conn.search(
+                search_base=base_dn,
+                search_filter=search_filter,
+                attributes=attributes
+            )
 
-        all_results = []
-        cookie = None
-        total_pages = 0
+            if success and self.conn.entries:
+                logging.info("Búsqueda LDAP exitosa.")
+                entry = self.conn.entries[0]  # Tomamos el primer y único resultado
+                email = entry.mail.value if hasattr(entry, "mail") else None
+                
 
-        while True:
-            try:
-                success = self.conn.search(
-                    search_base=base_dn,
-                    search_filter=search_filter,  # Usamos el filtro que se pasa como parámetro
-                    attributes=attributes,
-                    paged_size=paged_size,
-                    paged_cookie=cookie 
-                )
-
-                if success:
-                    total_pages += 1
-                    logging.info(f"Página {total_pages} procesada")
-                    all_results.extend(self.conn.entries)
-
-                    cookie = self.conn.result['controls'].get('1.2.840.113556.1.4.319', {}).get('value', {}).get('cookie', b'')
-                    if not cookie:
-                        logging.info("No hay más páginas de resultados.")
-                        break
+                if email:
+                    logging.info(f"Correo encontrado: {email}")
+                    #print(f"el mail que se encontro es: {email}")
+                    return email
                 else:
-                    logging.error("La búsqueda no fue exitosa.")
-                    break
-            except Exception as e:
-                logging.error(f"Ocurrió un error durante la búsqueda: {e}")
-                break
+                    #logging.warning("No se encontró un correo electrónico en el resultado.")
+                    return None
+            else:
+                #logging.error("La búsqueda no fue exitosa o no se encontraron resultados.")
+                return None
 
-        return all_results
+        except Exception as e:
+            logging.error(f"Ocurrió un error durante la búsqueda: {e}")
+            return None

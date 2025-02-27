@@ -15,6 +15,7 @@ def algo():
     user_manager = UserManager(ldap_connector, COUNTRY_CONFIG)
 
     manager_email = user_manager.search_manager_email('Henning Laddach')
-    print(manager_email)
+
+    print(F"Desde la funcion algo: {manager_email}")
 
 algo()

@@ -87,26 +87,23 @@ class UserManager:
         """
         Busca el email de un manager por su givenname, usando la nueva función search_email_by_givenname.
         """
-        # Log para ver el inicio de la búsqueda
+
         logging.info(f"Iniciando búsqueda de email para el manager: {givenname}")
-        
-        # Usamos el filtro específico para el givenname en el atributo cn
+
         search_filter = f"(&(cn=*{givenname}*))"
         
-        # Registramos el tiempo antes de la búsqueda LDAP
         start_time = time.time()
-        results = self.ldap_connector.search_email_by_givenname(base_dn, search_filter)
+        result = self.ldap_connector.search_email_by_givenname(base_dn, search_filter)
         end_time = time.time()
         
-        # Log para ver el tiempo que tomó la búsqueda LDAP
         logging.info(f"Búsqueda LDAP para el manager '{givenname}' completada en {end_time - start_time:.2f} segundos.")
         
-        if not results:
+        if not result:
             logging.info(f"No se encontró un manager con el givenname: {givenname}")
-            return {"LDAP_MAIL": "-"}
+            return "DOESNT_HAVE"
+        else:
+            user_mail = result
+            logging.info(f"Email encontrado para el manager '{givenname}': {user_mail}")
         
-        user_mail = results[0].mail if 'mail' in results[0] else "DOESNT_HAVE"
-        logging.info(f"Email encontrado para el manager '{givenname}': {user_mail}")
-        
-        return user_mail
+            return user_mail
 
