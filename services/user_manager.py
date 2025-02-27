@@ -2,6 +2,7 @@
 from ldap3.core.exceptions import LDAPException
 from utils import process_entries
 import logging
+import time
 
 class UserManager:
     def __init__(self, ldap_connector, country_config):
@@ -16,7 +17,6 @@ class UserManager:
 
         user_type = user_type.strip().lower()
         
-        # Verificar si el tipo de usuario es válido
         key = f"dn_{user_type}"
         if key not in country_config:
             raise ValueError(f"Tipo de usuario '{user_type}' no encontrado para el país '{country_code}'.")
@@ -81,3 +81,32 @@ class UserManager:
             print(f"Error en la búsqueda LDAP: {e}")
         
         return all_users
+    
+
+    def search_manager_email(self, givenname, base_dn="OU=DSV.COM,DC=DSV,DC=COM"):
+        """
+        Busca el email de un manager por su givenname, usando la nueva función search_email_by_givenname.
+        """
+        # Log para ver el inicio de la búsqueda
+        logging.info(f"Iniciando búsqueda de email para el manager: {givenname}")
+        
+        # Usamos el filtro específico para el givenname en el atributo cn
+        search_filter = f"(&(cn=*{givenname}*))"
+        
+        # Registramos el tiempo antes de la búsqueda LDAP
+        start_time = time.time()
+        results = self.ldap_connector.search_email_by_givenname(base_dn, search_filter)
+        end_time = time.time()
+        
+        # Log para ver el tiempo que tomó la búsqueda LDAP
+        logging.info(f"Búsqueda LDAP para el manager '{givenname}' completada en {end_time - start_time:.2f} segundos.")
+        
+        if not results:
+            logging.info(f"No se encontró un manager con el givenname: {givenname}")
+            return {"LDAP_MAIL": "-"}
+        
+        user_mail = results[0].mail if 'mail' in results[0] else "DOESNT_HAVE"
+        logging.info(f"Email encontrado para el manager '{givenname}': {user_mail}")
+        
+        return user_mail
+

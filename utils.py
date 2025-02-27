@@ -1,6 +1,10 @@
 from models.user import User
 import re
 from datetime import datetime
+from config.countries import COUNTRY_CONFIG
+from config.settings import LDAP_SETTINGS
+import time
+
 
 def clean_parameter(parameter):
     """
@@ -40,6 +44,7 @@ def format_date(date):
 
     return date
 
+
 def get_account_active(useraccountcontrol):
     useraccountcontrol = get_string_value(useraccountcontrol)
     if useraccountcontrol == "512" or useraccountcontrol == "66048":
@@ -49,13 +54,15 @@ def get_account_active(useraccountcontrol):
     else:
         return None
     
+
 def get_classification_user(email):
     email = get_string_value(email)
-    if 'ext.' in email.lower():  # Convierto el email a minúscula antes de hacer la verificación
+    if 'ext.' in email.lower():
         return "external"
     else:
         return "internal"
     
+
 def process_cost_center(cost_center, value_to_find):
     department_code = ""
     branch_code = ""
@@ -73,6 +80,29 @@ def process_cost_center(cost_center, value_to_find):
         return branch_code
     elif value_to_find == "department":
         return department_code
+    else:
+        return None 
+
+
+def process_business_job_title(title, value_to_find):
+    title = get_string_value(title)
+
+    # Dividir el título en dos partes por la primera coma
+    title_parts = title.split(",", 1)
+    
+    if len(title_parts) == 2:
+        # Si hay una coma, separa el título y la descripción
+        job_title = title_parts[0].strip()  # Todo lo que está antes de la primera coma
+        job_description = title_parts[1].strip()  # Todo lo que está después de la primera coma
+    else:
+        # Si no hay coma, el título es todo el texto y la descripción es vacía
+        job_title = title.strip()
+        job_description = ""
+
+    if value_to_find == "job_title":
+        return job_title
+    elif value_to_find == "job_description":
+        return job_description
     else:
         return None 
 
@@ -96,6 +126,8 @@ def process_entries(entries):
             "distinguishedName": clean_parameter(entry.distinguishedName),
             "employeeType": entry.employeeType,
             "title": entry.title,
+            "jobTitle": process_business_job_title(entry.title, "job_title"),
+            "jobDescription": process_business_job_title(entry.title, "job_description"),
             "givenName": entry.givenName,
             "sn": entry.sn,
             "extensionAttribute4": int(get_string_value(entry.extensionAttribute4)), # Pasamos a entero el Security Level
@@ -103,6 +135,7 @@ def process_entries(entries):
             "departmentNumber": get_string_value(entry.departmentNumber).strip(), # Limpio espacios vacíos
             "physicaldeliveryofficename": entry.physicaldeliveryofficename,
             "manager": clean_parameter(entry.manager),
+            #"managerEmail": search_manager_email(entry.manager),
             "c": entry.c,
             "co": entry.co,
             "employeeID": entry.employeeID,
@@ -133,44 +166,122 @@ def process_entries(entries):
 
 import logging
 from services.email_verifier import EmailVerifier
-import time
+from concurrent.futures import ThreadPoolExecutor
+
+
+def fetch_manager_email(user, user_manager, cached_managers):
+    """
+    Función para obtener el correo del manager de un usuario de manera paralela.
+    """
+    user_data = user.to_dict()
+    manager_email = None
+
+    if 'manager' in user_data:
+        manager_name = user_data['manager']
+        manager_email = user_manager.search_manager_email(manager_name, cached_managers)
+    
+    # Actualizamos el campo managerEmail del objeto user
+    user.managerEmail = manager_email  # Asegurándonos de que se actualiza correctamente
+    
+    return user  # Devolvemos solo el objeto `user` actualizado con el `managerEmail`
+
+
+
+def process_managers_emails(valid_users):
+    from services.user_manager import UserManager
+    from services.ldap_connector import LDAPConnector
+
+    ldap_connector = LDAPConnector(LDAP_SETTINGS)
+    connection = ldap_connector.connect()
+
+    if connection:
+        logging.info("Conexión LDAP establecida con éxito para la búsqueda de email manager.")
+    
+    user_manager = UserManager(ldap_connector, COUNTRY_CONFIG)
+
+    # Inicializamos la caché de managers
+    cached_managers = {}
+
+    # Log para verificar el número de usuarios a procesar
+    logging.info(f"Se van a procesar {len(valid_users)} usuarios para verificar el email del manager.")
+
+    start_time = time.time()
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [
+            executor.submit(fetch_manager_email, user, user_manager, cached_managers) 
+            for user in valid_users
+        ]
+        
+        for future in futures:
+            user = future.result()  # Ahora solo obtenemos el objeto `user` actualizado con el `managerEmail`
+            # No es necesario hacer nada más, ya que `user` ya tiene el `managerEmail` actualizado
+
+    end_time = time.time()
+    search_duration = (end_time - start_time) / 60
+    logging.info(f"Todas las consultas para obtener los emails de managers han terminado en {search_duration:.2f} minutos.")
+    
+    connection.unbind()
+    logging.info("Conexión LDAP para la búsqueda de emails cerrada.")
+
+
+
+def verify_email_for_user(user, email_verifier, country_code):
+    """
+    Verifica el correo electrónico de un usuario y obtiene el correo del manager si es necesario.
+    """
+    email = get_string_value(user.mail)
+    if not email:
+        return None
+
+    result = email_verifier.check_email_in_db(email, country_code)
+    if result and any("The email does not exist in the database as active" in row[2] for row in result):
+        return user
+    return None
 
 
 def verify_emails(users, country_code):
     """
-    Verifica los emails con el procedimiento almacenado y guarda los usuarios completos si cumplen la condición.
+    Esta función permite verificar correos electrónicos de manera paralela, y optimiza la consulta de los correos del manager.
     """
+
     email_verifier = EmailVerifier()
     valid_users = []
     start_time = time.time()
 
-    for user in users:
-        email = user.mail
+    # Log para ver el número de usuarios a verificar
+    logging.info(f"Iniciando verificación de emails para {len(users)} usuarios.")
 
-        if not email:
-            continue
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [
+            executor.submit(verify_email_for_user, user, email_verifier, country_code) 
+            for user in users
+        ]
 
-        # Si el email existe, verificamos en BDD
-        if email:
-            result = email_verifier.check_email_in_db(email, country_code)
-
-            if result and any("The email does not exist in the database as active" in row[2] for row in result):
-                logging.info(f"✅ El usuario {email} esta pendiente de creacion.")
+        for future in futures:
+            user = future.result()
+            if user:
                 valid_users.append(user)
-            else:
-                logging.info(f"El usuario {email} no es candidato a creacion.")
-        
 
-    output_file = f"valid_users.txt"
+    end_time = time.time()
+    search_duration = (end_time - start_time) / 60
+
+    logging.info(f"Verificación de emails completada en {search_duration:.2f} minutos.")
+
+    process_managers_emails(valid_users)  # Esto actualizará los usuarios con el managerEmail
+
+    output_file = "valid_users.txt"
     with open(output_file, "w") as valid_file:
         for user in valid_users:
             user_data = user.to_dict()
-
             for key, value in user_data.items():
                 valid_file.write(f"{key}: {value}\n")
+            
+            # Ya no necesitamos escribir el email del manager aquí, ya que está en el user.to_dict()
+            # Y si se ha actualizado previamente, ya estará incluido.
+            
             valid_file.write("\n" + "-"*50 + "\n\n")
 
-    logging.info(f"✅ Se guardaron {len(valid_users)} usuarios del tipo en '{output_file}'.")
+    logging.info(f"✅ Se guardaron {len(valid_users)} usuarios en '{output_file}'.")
 
     end_time = time.time()
     search_duration = (end_time - start_time) / 60

@@ -47,7 +47,6 @@ def main():
                     for key, value in user_data.items():
                         txt_file.write(f"{key}: {value}\n")
                     
-                    # Separador entre usuarios
                     txt_file.write("\n" + "-"*50 + "\n\n")
  
             logging.info(f"Se guardaron {len(users)} usuarios del tipo '{user_type}' en el archivo '{output_file}'.")

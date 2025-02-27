@@ -5,6 +5,8 @@ class User:
         self.distinguished_name = data.get("distinguishedName")
         self.employee_type = data.get("employeeType")
         self.title = data.get("title")
+        self.job_title = data.get("jobTitle")
+        self.job_description = data.get("jobDescription")
         self.given_name = data.get("givenName")
         self.surname = data.get("sn")
         self.extension_attribute4 = data.get("extensionAttribute4")
@@ -12,6 +14,7 @@ class User:
         self.department_number = data.get("departmentNumber")
         self.office_name = data.get("physicaldeliveryofficename")
         self.manager = data.get("manager")
+        self.manager_email = data.get("managerEmail")
         self.country_code = data.get("c")
         self.country_name = data.get("co")
         self.employee_id = data.get("employeeID")
@@ -59,6 +62,8 @@ class User:
             "distinguishedName": sanitize(self.distinguished_name),
             "employeeType": sanitize(self.employee_type),
             "title": sanitize(self.title),
+            "jobTitle": sanitize(self.job_title),
+            "jobDescription": sanitize(self.job_description),
             "givenName": sanitize(self.given_name),
             "sn": sanitize(self.surname),
             "extensionAttribute4": sanitize(self.extension_attribute4),
@@ -66,6 +71,7 @@ class User:
             "departmentNumber": sanitize(self.department_number),
             "physicaldeliveryofficename": sanitize(self.office_name),
             "manager": sanitize(self.manager),
+            "managerEmail": sanitize(self.manager_email),
             "c": sanitize(self.country_code),
             "co": sanitize(self.country_name),
             "employeeID": sanitize(self.employee_id),
