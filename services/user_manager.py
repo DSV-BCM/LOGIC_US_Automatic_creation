@@ -105,5 +105,5 @@ class UserManager:
             user_mail = result
             logging.info(f"Email encontrado para el manager '{givenname}': {user_mail}")
         
-            return user_mail
+        return user_mail
 

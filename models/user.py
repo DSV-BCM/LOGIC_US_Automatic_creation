@@ -71,7 +71,7 @@ class User:
             "departmentNumber": sanitize(self.department_number),
             "physicaldeliveryofficename": sanitize(self.office_name),
             "manager": sanitize(self.manager),
-            "managerEmail": sanitize(self.manager_email),
+            "managerEmail": sanitize(getattr(self, 'managerEmail', 'DOESNT_HAVE')),
             "c": sanitize(self.country_code),
             "co": sanitize(self.country_name),
             "employeeID": sanitize(self.employee_id),

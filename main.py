@@ -19,8 +19,8 @@ def main():
 
     country_code = 'US'
 
-    #user_types = ["group", "externals", "internals" ]
-    user_types = ["group", "externals"] # TEST RÁPIDO
+    user_types = ["group", "externals", "internals" ]
+    #user_types = ["group", "externals"] # TEST RÁPIDO
     #user_types = ["internals"] # Solo internals
  
     if country_code not in COUNTRY_CONFIG:

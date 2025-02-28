@@ -184,8 +184,6 @@ def fetch_manager_email(user, user_manager, cached_managers):
 
 
 def process_managers_emails(valid_users):
-    print(f"usuarios recibidos en process_managers_emails(): {valid_users}")
-
     from services.user_manager import UserManager
     from services.ldap_connector import LDAPConnector
 
@@ -208,13 +206,6 @@ def process_managers_emails(valid_users):
 
     for future in as_completed(futures):
         future.result()
-
-    for user in valid_users:
-        print(f"Usuario: {user.mail}, Manager Email: {user.managerEmail}")
-        print("INFORMACION COMPLETA DEL USUARIO: ")
-        print(user.to_dict())
-
-    print(f"usuarios actualizados desde process_managers_emails(): {valid_users}")
 
     end_time = time.time()
     search_duration = (end_time - start_time) / 60
@@ -250,7 +241,6 @@ def verify_emails(users, country_code):
     valid_users = []
     start_time = time.time()
 
-    # Log para ver el número de usuarios a verificar
     logging.info(f"Iniciando verificación de emails para {len(users)} usuarios.")
 
     with ThreadPoolExecutor(max_workers=10) as executor:
@@ -268,11 +258,9 @@ def verify_emails(users, country_code):
     search_duration = (end_time - start_time) / 60
 
     logging.info(f"Verificación de emails completada en {search_duration:.2f} minutos.")
-
-    print(f"usuarios desde verify_emails(): {valid_users}")
     
-    valid_users = process_managers_emails(valid_users)  # Esto actualizará los usuarios con el managerEmail
-
+    valid_users = process_managers_emails(valid_users) 
+    
     output_file = "valid_users.txt"
     with open(output_file, "w") as valid_file:
         for user in valid_users:
